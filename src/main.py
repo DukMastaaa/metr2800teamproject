@@ -53,6 +53,31 @@ class RotaryEncoder:
         self.update = 1
 
 
+class StepperMotor:
+    DUTY = 65535 // 2
+
+    def __init__(self, enable_num: int, dir_num: int, step_num: int):
+        self.enable = Pin(enable_num, mode=Pin.OUT)
+        self.dir = Pin(dir_num, mode=Pin.OUT)
+        self.step_pwm = PWM(Pin(step_num, mode=Pin.OUT))
+
+    def off(self) -> None:
+        self.enable.off()
+        self.step_pwm.duty_u16(0)
+
+    def forward(self, freq: int) -> None:
+        self.enable.on()
+        self.dir.off()
+        self.step_pwm.freq(freq)
+        self.step_pwm.duty_u16(self.DUTY)
+
+    def backward(self, freq: int) -> None:
+        self.enable.on()
+        self.dir.on()
+        self.step_pwm.freq(freq)
+        self.step_pwm.duty_u16(self.DUTY)
+
+
 def pc_to_d(percent):
     if percent > 0.9:
         percent = 0.9
