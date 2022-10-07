@@ -32,7 +32,7 @@ def ultra_test():
         utime.sleep(0.5)
 
 def step_test():
-    stepper = StepperMotor(PinSLEEP_inverted, PinDIR, PinSTEP)
+    stepper = StepperMotor(PinENABLE, PinDIR, PinSTEP)
     while True:
         steps = int(input("number of steps (signed): "))
         stepper.n_steps(50, abs(steps), steps < 0)
