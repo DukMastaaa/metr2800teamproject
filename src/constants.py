@@ -24,3 +24,7 @@ PinServo = 22
 PinEBarm = 26
 PinEAarm = 27
 PinInternalLED = 25
+
+# duty cycle for servo open and close (float)
+SERVO_OPEN_DUTY = 0.5
+SERVO_CLOSE_DUTY = 0.3

@@ -1,5 +1,7 @@
 from machine import Pin, PWM, Timer
 
+UINT16_MAX = 65535
+
 class HBridgeMotor:
     """Motor driven by H-bridge."""
     def __init__(self, enable_num: int, in1_num: int, in2_num: int):
@@ -50,9 +52,12 @@ class RotaryEncoder:
             self.count -= 1
         self.update = 1
 
+    def zero_counts(self) -> None:
+        self.count = 0
+
 
 class StepperMotor:
-    DUTY = 65535 // 2
+    DUTY = UINT16_MAX // 2
 
     def __init__(self, enable_num: int, dir_num: int, step_num: int):
         self.enable = Pin(enable_num, mode=Pin.OUT)
@@ -112,6 +117,19 @@ class StepperMotor:
             mode=Timer.ONE_SHOT,
             callback=self.stop_callback
         )
+
+
+class ServoMotor:
+    def __init__(self, signal_num: int, open_duty: float, close_duty: float):
+        self.signal_pwm = PWM(Pin(signal_num, mode=Pin.OUT))
+        self.open_duty_u16 = int(UINT16_MAX * open_duty)
+        self.close_duty_u16 = int(UINT16_MAX * close_duty)
+
+    def open(self):
+        self.signal_pwm.duty_u16(self.open_duty_u16)
+
+    def close(self):
+        self.signal_pwm.duty_u16(self.close_duty_u16)
 
 
 def pc_to_d(percent):
