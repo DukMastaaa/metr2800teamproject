@@ -57,33 +57,54 @@ class RotaryEncoder:
 
 
 class StepperMotor:
+    """
+    Stepper motor driven through ENABLE_INV, STEP and DIR pins.
+    """
     DUTY = UINT16_MAX // 2
 
     def __init__(self, enable_num: int, dir_num: int, step_num: int):
-        self.enable = Pin(enable_num, mode=Pin.OUT)
+        self.step_num = step_num
+        self.enable_inv = Pin(enable_num, mode=Pin.OUT)
         self.dir = Pin(dir_num, mode=Pin.OUT)
         # hopefully both of these can run at once
         self.step = Pin(step_num, mode=Pin.OUT)
         self.step_pwm = PWM(Pin(step_num, mode=Pin.OUT))
+        self.pwm_active = True
 
-        self.tick_timer = Timer(1)
+        self.tick_timer = Timer(-1)
         self.tick_value = 0
-        self.stop_timer = Timer(2)
+        self.stop_timer = Timer(-1)
+
+    def activate_pwm(self) -> None:
+        if not self.pwm_active:
+            self.step_pwm = PWM(Pin(self.step_num))
+            self.pwm_active = True
+
+    def activate_manual(self) -> None:
+        if self.pwm_active:
+            self.step = Pin(self.step_num, mode=Pin.OUT)
+            self.pwm_active = False
 
     def off(self) -> None:
-        self.enable.off()
+        self.enable_inv.on()
         self.step.off()
         self.step_pwm.duty_u16(0)
 
+    def brake(self) -> None:
+        self.enable_inv.off()
+        self.step_pwm.deinit()
+
     def forward(self, freq: int) -> None:
-        self.enable.on()
+        self.enable_inv.off()
         self.dir.off()
+        self.activate_pwm()
         self.step_pwm.freq(freq)
         self.step_pwm.duty_u16(self.DUTY)
 
     def backward(self, freq: int) -> None:
-        self.enable.on()
+        self.enable_inv.off()
         self.dir.on()
+        self.activate_pwm()
         self.step_pwm.freq(freq)
         self.step_pwm.duty_u16(self.DUTY)
 
@@ -100,8 +121,8 @@ class StepperMotor:
 
     def n_steps(self, freq: int, num: int, reverse: bool = False) -> None:
         """Turns the given number of steps then stops."""
-        self.enable.on()
-        self.step_pwm.duty_u16(0)
+        self.enable_inv.on()
+        self.activate_manual()
         self.tick_value = 0
         self.dir.value(int(reverse))
 
