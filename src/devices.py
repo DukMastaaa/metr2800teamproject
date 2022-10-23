@@ -62,9 +62,9 @@ class StepperMotor:
     """
     DUTY = UINT16_MAX // 2
 
-    def __init__(self, enable_num: int, dir_num: int, step_num: int):
+    def __init__(self, enable_inv_num: int, dir_num: int, step_num: int):
         self.step_num = step_num
-        self.enable_inv = Pin(enable_num, mode=Pin.OUT)
+        self.enable_inv = Pin(enable_inv_num, mode=Pin.OUT)
         self.dir = Pin(dir_num, mode=Pin.OUT)
         # hopefully both of these can run at once
         self.step = Pin(step_num, mode=Pin.OUT)
@@ -159,3 +159,63 @@ def pc_to_d(percent):
     elif percent < 0:
         percent = 0
     return int(65535 * percent)
+
+
+class ManualStepper:
+    """
+    Motor A truth table
+    ENA IN1 IN2 Description
+    0 N/A N/A Motor A is off
+    1 0 0 Motor A is stopped (brakes)
+    1 0 1 Motor A is on and turning backwards   (+ -)
+    1 1 0 Motor A is on and turning forwards    (- +)
+    1 1 1 Motor A is stopped (brakes)
+    ---+
+    --+-
+    -+--
+    +---
+    """
+
+    SEQUENCE = (
+        (0, 0, 0, 1),
+        (0, 0, 1, 0),
+        (0, 1, 0, 0),
+        (1, 0, 0, 0)
+    )
+
+    def __init__(self, in1a_num, in1b_num, in2a_num, in2b_num, en1_num, en2_num):
+        self.in1a = Pin(in1a_num, mode=Pin.OUT)
+        self.in1b = Pin(in1b_num, mode=Pin.OUT)
+        self.in2a = Pin(in2a_num, mode=Pin.OUT)
+        self.in2b = Pin(in2b_num, mode=Pin.OUT)
+        self.en1 = Pin(en1_num, mode=Pin.OUT)
+        self.en2 = Pin(en2_num, mode=Pin.OUT)
+        self.seq = 0
+        self.seq_len = len(self.SEQUENCE)
+
+    def output_given_seq(self):
+        assert self.seq in range(self.seq_len)
+        for idx, pin in enumerate((self.in1a, self.in1b, self.in2a, self.in2b)):
+            pin.value(self.SEQUENCE[self.seq][idx])
+
+    def on(self):
+        self.en1.on()
+        self.en2.on()
+
+    def off(self):
+        self.en1.off()
+        self.en2.off()
+
+    def next_step(self):
+        if self.seq == self.seq_len - 1:
+            self.seq = 0
+        else:
+            self.seq += 1
+        self.output_given_seq()
+
+    def prev_step(self):
+        if self.seq == 0:
+            self.seq = self.seq_len - 1
+        else:
+            self.seq -= 1
+        self.output_given_seq()

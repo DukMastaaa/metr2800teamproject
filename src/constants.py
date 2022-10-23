@@ -1,5 +1,5 @@
-# pin 0 free
-# pin 1 free
+PinButtonSTOP = 0
+PinButtonMODE = 1
 PinEAWinch = 2
 PinEBWinch = 3
 PinForwardLimit = 4
@@ -14,17 +14,17 @@ PinIN2winch = 12
 PinENtraversal = 13
 PinIN1traversal = 14
 PinIN2traversal = 15
-PinDIR = 16
-PinSTEP = 17
-PinENABLE = 18
-PinIN2arm = 19
-PinIN1arm = 20
-PinENarm = 21
-PinServo = 22
+PinServo = 16
+PinDIR = 17
+PinSTEP = 18
+PinENABLE_INV = 19
+PinIN2arm = 20
+PinIN1arm = 21
+PinENarm = 22
+PinInternalLED = 25
 PinEBarm = 26
 PinEAarm = 27
-PinInternalLED = 25
 
 # duty cycle for servo open and close (float)
-SERVO_OPEN_DUTY = 0.5
-SERVO_CLOSE_DUTY = 0.3
+SERVO_OPEN_DUTY = 2100/65535
+SERVO_CLOSE_DUTY = 4500/65535
