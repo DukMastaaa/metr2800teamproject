@@ -1,10 +1,11 @@
-import machine, time
+import machine, utime
 from machine import Pin
 
 __version__ = '0.1.0'
 __author__ = 'Roberto Sánchez'
 __license__ = "Apache License 2.0. https://www.apache.org/licenses/LICENSE-2.0"
 
+TIMEOUT_US = 500*2*30
 class HCSR04:
     """
     Driver to use the untrasonic sensor HC-SR04.
@@ -14,8 +15,7 @@ class HCSR04:
 
     """
     # Timeout is based in chip range limit (400cm)
-    TIMEOUT_US = 500*2*30
-    def __init__(self, trigger_pin, echo_pin, echo_timeout_us=HCSR04.TIMEOUT_US):
+    def __init__(self, trigger_pin, echo_pin, echo_timeout_us=TIMEOUT_US):
         """
         trigger_pin: Output pin to send pulses
         echo_pin: Readonly pin to measure the distance. The pin should be protected with 1k resistor
@@ -36,17 +36,17 @@ class HCSR04:
         We use the method `machine.time_pulse_us()` to get the microseconds until the echo is received.
         """
         self.trigger.off() # Stabilize the sensor
-        time.sleep_us(5)
+        utime.sleep_us(5)
         self.trigger.on()
         # Send a 10us pulse.
-        time.sleep_us(10)
+        utime.sleep_us(10)
         self.trigger.off()
         try:
             pulse_time = machine.time_pulse_us(self.echo, 1, self.echo_timeout_us)
             return pulse_time
         except OSError as ex:
             if ex.args[0] == 110: # 110 = ETIMEDOUT
-                raise OSError('Out of range')
+                raise OSError('Out of range') from ex
             raise ex
 
     def distance_mm(self):
