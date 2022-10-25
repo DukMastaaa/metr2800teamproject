@@ -188,9 +188,14 @@ class CloseGrabberState(State):
 class TurnArmState(State):
     def tick(self) -> None:
         print("TurnArmState")
-        self._sys.motor_spin.forward(SPIN_FREQ, SPIN_DUTY_U16)
-        utime.sleep(SPIN_DURATION)
-        self._sys.motor_spin.off()
+        self._sys.motor_spin.backward(SPIN_FAST_FREQ, SPIN_FAST_DUTY_U16)
+        utime.sleep(SPIN_FAST_DURATION)
+        self._sys.transition_to(HoldArmState())
+
+class HoldArmState(State):
+    def tick(self) -> None:
+        print("HoldArmState")
+        self._sys.motor_spin.backward(SPIN_HOLD_FREQ, SPIN_HOLD_DUTY_U16)
         self._sys.transition_to(WinchUpState())
 
 class WinchUpState(State):
