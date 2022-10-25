@@ -79,7 +79,7 @@ class InitialState(State):
         self._sys.enc_winch.zero_counts()
 
         # change state
-        self._sys.transition_to()
+        self._sys.transition_to(SelectModeState())
 
 class SelectModeState(State):
     def tick(self) -> None:
@@ -143,7 +143,7 @@ def calibration_helper(sys: System, device, freq, duty_u16,
             while sys.button_stop.value() == 0:
                 pass
         # stop moving
-        sys.motor_spin.off()
+        device.off()
         # wait a bit longer for debouncing
         utime.sleep(DEBOUNCE_WAIT_TIME_SEC)
         # don't change state
