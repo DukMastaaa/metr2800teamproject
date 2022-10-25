@@ -176,7 +176,6 @@ class ServoMotor:
         self.close_duty_u16 = close_duty_u16
 
     def open(self):
-        print("opening servo")
         self.signal_pwm.duty_u16(self.open_duty_u16)
 
     def close(self):
