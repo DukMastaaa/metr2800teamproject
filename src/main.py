@@ -4,6 +4,7 @@ import hcsr04
 import utime
 from devices import *
 from constants import *
+from logic import *
 
 micropython.alloc_emergency_exception_buf(100)
 
@@ -18,12 +19,16 @@ def winch_test():
             if enc_winch.count % 100 == 0 and enc_winch.update == 1:
                 print(enc_winch.count)
                 enc_winch.update = 0
+        motor_winch.off()
+        utime.sleep(2)
         print("backward")
         motor_winch.backward(50, pc_to_d(0.5))
         while enc_winch.count > -1000:
             if enc_winch.count % 100 == 0 and enc_winch.update == 1:
                 print(enc_winch.count)
                 enc_winch.update = 0
+        motor_winch.off()
+        utime.sleep(2)
 
 def ultra_test():
     ultra_left = hcsr04.HCSR04(PinTRIGleft, PinECHOleft)
@@ -67,7 +72,7 @@ def setpos_test():
     motor_winch = HBridgeMotor(PinENWinch, PinIN1winch, PinIN2winch)
     enc_winch = RotaryEncoder(PinEAWinch, PinEBWinch)
 
-    DUTY = 0.3
+    DUTY = 65530/65535
     FREQ = 50
 
     while True:
@@ -76,39 +81,51 @@ def setpos_test():
         if enc_winch.count < pos:
             motor_winch.forward(FREQ, pc_to_d(DUTY))
             while enc_winch.count < pos:
+                print(enc_winch.count)
                 if enc_winch.count % 50 == 0 and enc_winch.update == 1:
-                    print(enc_winch.count)
+                    #print(enc_winch.count)
                     enc_winch.update = 0
             motor_winch.off()
         else:
             motor_winch.backward(FREQ, pc_to_d(DUTY))
             while enc_winch.count >= pos:
+                print(enc_winch.count)
                 if enc_winch.count % 50 == 0 and enc_winch.update == 1:
-                    print(enc_winch.count)
+                    #print(enc_winch.count)
                     enc_winch.update = 0
             motor_winch.off()
 
 def traversal_test():
     motor_traversal = HBridgeMotor(PinENtraversal, PinIN1traversal, PinIN2traversal)
     freq = 50
-    duty = UINT16_MAX // 2
-    while True:
-        motor_traversal.off()
-        utime.sleep(1)
-        motor_traversal.forward(freq, duty)
-        utime.sleep(3)
-        motor_traversal.off()
-        utime.sleep(1)
-        motor_traversal.backward(freq, duty)
-        utime.sleep(3)
-
-def manual_step_test():
-    ms = ManualStepper(1, 2, 3, 4, 0, 5)
-    while True:
-        ms.next_step()
-        utime.sleep(1/20)
-
+    duty = 65530
+    motor_traversal.off()
+    utime.sleep(1)
+    motor_traversal.backward(freq, duty)
+    utime.sleep(2)
+    motor_traversal.off()
 
 if __name__ == "__main__":
-    # traversal_test()
-    setpos_test()
+    #traversal_test()
+    """
+    led = Pin(25, mode=Pin.OUT)
+    while True:
+        led.on()
+        utime.sleep(0.5)
+        led.off()
+        utime.sleep(0.5)
+    """
+    
+    system = System(InitialState())
+    while not system.terminate:
+        system.tick()
+    led_internal = Pin(25, mode=Pin.OUT)
+    while True:
+        led_internal.on()
+        utime.sleep(0.5)
+        led_internal.off()
+        utime.sleep(0.5)
+    
+    # step_test()
+    # setpos_test()
+    # setpos_test()

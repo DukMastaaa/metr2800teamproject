@@ -1,6 +1,6 @@
-from __future__ import annotations
+#from __future__ import annotations
 
-from abc import ABC, abstractmethod
+#from abc import ABC, abstractmethod
 
 from micropython import schedule
 from machine import Pin, soft_reset
@@ -43,16 +43,17 @@ class System:
     def tick(self) -> None:
         self._state.tick()
 
-    def shutdown(self) -> None:
-        schedule(self.real_shutdown_local, None)
-    
-    def real_shutdown(self, _) -> None:
+    def real_shutdown(self, test) -> None:
+        print("SHUTDOWN")
         self.motor_winch.off()
         # i hope this works??
         soft_reset()
 
+    def shutdown(self) -> None:
+        schedule(self.real_shutdown_local, 123)
 
-class State(ABC):
+
+class State():
     @property
     def sys(self) -> System:
         return self._sys
@@ -61,41 +62,50 @@ class State(ABC):
     def context(self, sys: System) -> None:
         self._sys = sys
 
-    @abstractmethod
+    #@abstractmethod
     def tick(self) -> None:
         pass
 
 
 class InitialState(State):
     def tick(self) -> None:
+        print("InitialState")
         # do required initialisation
         self._sys.servo.open()
         self._sys.enc_winch.zero_counts()
 
         # interrupt stop button for shutdown
         self._sys.button_stop.irq(self._sys.shutdown_local, Pin.IRQ_FALLING)
+        
+        self._sys.led_internal.on()
 
         # wait until mode button pressed low
-        while self._sys.button_mode.high():
+        while self._sys.button_mode.value():
             pass
+        #utime.sleep(2)
         self._sys.transition_to(CloseGrabberState())
 
 class CloseGrabberState(State):
     def tick(self) -> None:
+        print("CloseGrabberState")
+        self._sys.led_internal.off()
         self._sys.servo.close()
         utime.sleep(SERVO_DURATION_SEC)
         self._sys.transition_to(WinchUpState())
 
 class WinchUpState(State):
     def tick(self) -> None:
+        print("WinchUpState")
         self._sys.motor_winch.forward(WINCH_FREQ, WINCH_DUTY_U16)
-        while self._sys.enc_winch.count < WINCH_UP_POS:
-            pass
+        utime.sleep(WINCH_DURATION)
+        #while self._sys.enc_winch.count < WINCH_UP_POS:
+        #    pass
         self._sys.motor_winch.off()
         self._sys.transition_to(TraverseForwardState())
 
 class TraverseForwardState(State):
     def tick(self) -> None:
+        print("TraverseForwardState")
         self._sys.motor_traversal.forward(TRAVERSAL_FREQ, TRAVERSAL_DUTY_U16)
         utime.sleep(TRAVERSAL_FORWARD_DURATION_SEC)
         self._sys.motor_traversal.off()
@@ -103,12 +113,14 @@ class TraverseForwardState(State):
 
 class OpenGrabberState(State):
     def tick(self) -> None:
+        print("OpenGrabberState")
         self._sys.servo.open()
         utime.sleep(SERVO_DURATION_SEC)
         self._sys.transition_to(TraverseBackwardState())
 
 class TraverseBackwardState(State):
     def tick(self) -> None:
+        print("TraverseBackwardState")
         self._sys.motor_traversal.backward(TRAVERSAL_FREQ, TRAVERSAL_DUTY_U16)
         utime.sleep(TRAVERSAL_BACKWARD_DURATION_SEC)
         self._sys.motor_traversal.off()
@@ -116,11 +128,15 @@ class TraverseBackwardState(State):
 
 class FinalState(State):
     def tick(self) -> None:
+        print("FinalState")
+        self._sys.terminate = True
+        """
         while True:
             self._sys.led_internal.on()
             utime.sleep(0.5)
             self._sys.led_internal.off()
             utime.sleep(0.5)
+        """
 
 
 if __name__ == "__main__":

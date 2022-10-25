@@ -2,8 +2,8 @@ from machine import Pin, PWM, Timer
 
 UINT16_MAX = 65535
 
+"""
 class HBridgeMotor:
-    """Motor driven by H-bridge."""
     def __init__(self, enable_num: int, in1_num: int, in2_num: int):
         self.enable_pwm = PWM(Pin(enable_num, mode=Pin.OUT))
         self.in1 = Pin(in1_num, mode=Pin.OUT)
@@ -23,6 +23,28 @@ class HBridgeMotor:
     def backward(self, freq: int, duty_u16: int) -> None:
         self.enable_pwm.freq(freq)
         self.enable_pwm.duty_u16(duty_u16)
+        self.in1.off()
+        self.in2.on()
+"""
+class HBridgeMotor:
+    """Motor driven by H-bridge."""
+    def __init__(self, enable_num: int, in1_num: int, in2_num: int):
+        self.enable = Pin(enable_num, mode=Pin.OUT)
+        self.in1 = Pin(in1_num, mode=Pin.OUT)
+        self.in1.off()
+        self.in2 = Pin(in2_num, mode=Pin.OUT)
+        self.in2.off()
+
+    def off(self) -> None:
+        self.enable.off()
+
+    def forward(self, freq: int, duty_u16: int) -> None:
+        self.enable.on()
+        self.in1.on()
+        self.in2.off()
+
+    def backward(self, freq: int, duty_u16: int) -> None:
+        self.enable.on()
         self.in1.off()
         self.in2.on()
 
@@ -141,12 +163,14 @@ class StepperMotor:
 
 
 class ServoMotor:
-    def __init__(self, signal_num: int, open_duty: float, close_duty: float):
+    def __init__(self, signal_num: int, open_duty_u16: int, close_duty_u16: int):
         self.signal_pwm = PWM(Pin(signal_num, mode=Pin.OUT))
-        self.open_duty_u16 = int(UINT16_MAX * open_duty)
-        self.close_duty_u16 = int(UINT16_MAX * close_duty)
+        self.signal_pwm.freq(50)
+        self.open_duty_u16 = open_duty_u16
+        self.close_duty_u16 = close_duty_u16
 
     def open(self):
+        print("opening servo")
         self.signal_pwm.duty_u16(self.open_duty_u16)
 
     def close(self):
