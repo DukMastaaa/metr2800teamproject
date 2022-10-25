@@ -197,10 +197,9 @@ class WinchUpState(State):
     def tick(self) -> None:
         print("WinchUpState")
         self._sys.motor_winch.forward(WINCH_FREQ, WINCH_DUTY_U16)
-        utime.sleep(WINCH_DURATION_MAX_MS)
         start_time = utime.ticks_ms()
         while self._sys.enc_winch.count < WINCH_UP_POS:
-            if utime.ticks_diff(utime.ticks_ms(), start_time) > WINCH_DURATION_MAX_MS:
+            if utime.ticks_diff(utime.ticks_ms(), start_time) >= WINCH_DURATION_MAX_MS:
                 print("WinchUp timeout")
                 break
             utime.sleep(0.1)  # ticks_diff seems intensive
