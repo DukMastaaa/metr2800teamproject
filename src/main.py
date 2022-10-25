@@ -123,7 +123,17 @@ def spin_repeat():
         utime.sleep(duration)
         motor_spin.backward(SPIN_FREQ, SPIN_DUTY_U16)
         utime.sleep(duration)
-        
+
+def spin_limit():
+    motor_spin = HBridgeMotorPWM(PinENspin, PinIN1spin, PinIN2spin)
+    print("spinning to hit screw")
+    motor_spin.forward(100, UINT16_MAX-1)
+    utime.sleep(1)
+    print("reducing current")
+    motor_spin.forward(100, UINT16_MAX//2)
+    utime.sleep(5)
+    print("ending")
+    motor_spin.off()
 
 def main():
     system = System(InitialState())
