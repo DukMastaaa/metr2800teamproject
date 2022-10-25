@@ -36,11 +36,11 @@ def ultra_test():
         print(ultra_left.distance_mm())
         utime.sleep(0.5)
 
-def step_test():
-    stepper = StepperMotor(PinENABLE_INV, PinDIR, PinSTEP)
-    while True:
-        steps = int(input("number of steps (signed): "))
-        stepper.n_steps(50, abs(steps), steps < 0)
+# def step_test():
+#     stepper = StepperMotor(PinENABLE_INV, PinDIR, PinSTEP)
+#     while True:
+#         steps = int(input("number of steps (signed): "))
+#         stepper.n_steps(50, abs(steps), steps < 0)
 
 def limit_test():
     limit_forward = Pin(PinForwardLimit, mode=Pin.OUT)
@@ -81,17 +81,15 @@ def setpos_test():
         if enc_winch.count < pos:
             motor_winch.forward(FREQ, pc_to_d(DUTY))
             while enc_winch.count < pos:
-                print(enc_winch.count)
                 if enc_winch.count % 50 == 0 and enc_winch.update == 1:
-                    #print(enc_winch.count)
+                    print(enc_winch.count)
                     enc_winch.update = 0
             motor_winch.off()
         else:
             motor_winch.backward(FREQ, pc_to_d(DUTY))
             while enc_winch.count >= pos:
-                print(enc_winch.count)
                 if enc_winch.count % 50 == 0 and enc_winch.update == 1:
-                    #print(enc_winch.count)
+                    print(enc_winch.count)
                     enc_winch.update = 0
             motor_winch.off()
 
@@ -105,17 +103,29 @@ def traversal_test():
     utime.sleep(2)
     motor_traversal.off()
 
-if __name__ == "__main__":
-    #traversal_test()
-    """
-    led = Pin(25, mode=Pin.OUT)
+def spin_test():
+    motor_spin = HBridgeMotorPWM(PinENspin, PinIN1spin, PinIN2spin)
+    print(f"freq={SPIN_FREQ},duty={SPIN_DUTY_U16}")
     while True:
-        led.on()
-        utime.sleep(0.5)
-        led.off()
-        utime.sleep(0.5)
-    """
-    
+        duration = float(input("signed duration (s): "))
+        if duration >= 0:
+            motor_spin.forward(SPIN_FREQ, SPIN_DUTY_U16)
+        else:
+            motor_spin.backward(SPIN_FREQ, SPIN_DUTY_U16)
+        utime.sleep(abs(duration))
+        motor_spin.brake()
+
+def spin_repeat():
+    motor_spin = HBridgeMotorPWM(PinENspin, PinIN1spin, PinIN2spin)
+    duration = float(input("duration (s): "))
+    while True:
+        motor_spin.forward(SPIN_FREQ, SPIN_DUTY_U16)
+        utime.sleep(duration)
+        motor_spin.backward(SPIN_FREQ, SPIN_DUTY_U16)
+        utime.sleep(duration)
+        
+
+def main():
     system = System(InitialState())
     while not system.terminate:
         system.tick()
@@ -125,7 +135,6 @@ if __name__ == "__main__":
         utime.sleep(0.5)
         led_internal.off()
         utime.sleep(0.5)
-    
-    # step_test()
-    # setpos_test()
-    # setpos_test()
+
+if __name__ == "__main__":
+    main()

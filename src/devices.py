@@ -13,6 +13,11 @@ class HBridgeMotorPWM:
 
     def off(self) -> None:
         self.enable_pwm.duty_u16(0)
+    
+    def brake(self) -> None:
+        self.enable_pwm.duty_u16(UINT16_MAX - 1)
+        self.in1.off()
+        self.in2.off()
 
     def forward(self, freq: int, duty_u16: int) -> None:
         self.enable_pwm.freq(freq)
