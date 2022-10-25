@@ -1,3 +1,6 @@
+from devices import UINT16_MAX
+
+
 PinButtonSTOP = 0
 PinButtonMODE = 1
 PinEAWinch = 2
@@ -15,9 +18,12 @@ PinENtraversal = 13
 PinIN1traversal = 14
 PinIN2traversal = 15
 PinServo = 16
-PinDIR = 17
-PinSTEP = 18
-PinENABLE_INV = 19
+PinENspin = 17
+PinIN1spin = 18
+PinIN2spin = 19
+# PinDIR = 17
+# PinSTEP = 18
+# PinENABLE_INV = 19
 PinIN2arm = 20
 PinIN1arm = 21
 PinENarm = 22
@@ -40,3 +46,9 @@ TRAVERSAL_FREQ = 100
 TRAVERSAL_DUTY_U16 = 65530
 TRAVERSAL_FORWARD_DURATION_SEC = 40
 TRAVERSAL_BACKWARD_DURATION_SEC = 40
+
+SPIN_FREQ = 20
+SPIN_DUTY_U16 = UINT16_MAX // 2
+SPIN_DURATION = 0.5
+
+DEBOUNCE_WAIT_TIME_SEC = 0.1

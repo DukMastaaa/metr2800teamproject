@@ -2,8 +2,8 @@ from machine import Pin, PWM, Timer
 
 UINT16_MAX = 65535
 
-"""
-class HBridgeMotor:
+class HBridgeMotorPWM:
+    """Motor driven by H-bridge with PWM on enable pin."""
     def __init__(self, enable_num: int, in1_num: int, in2_num: int):
         self.enable_pwm = PWM(Pin(enable_num, mode=Pin.OUT))
         self.in1 = Pin(in1_num, mode=Pin.OUT)
@@ -25,7 +25,8 @@ class HBridgeMotor:
         self.enable_pwm.duty_u16(duty_u16)
         self.in1.off()
         self.in2.on()
-"""
+
+
 class HBridgeMotor:
     """Motor driven by H-bridge."""
     def __init__(self, enable_num: int, in1_num: int, in2_num: int):

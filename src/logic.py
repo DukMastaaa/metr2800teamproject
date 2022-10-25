@@ -1,4 +1,4 @@
-#from __future__ import annotations
+from __future__ import annotations
 
 #from abc import ABC, abstractmethod
 
@@ -18,6 +18,8 @@ class System:
         self.enc_winch = RotaryEncoder(PinEAWinch, PinEBWinch)
 
         self.motor_traversal = HBridgeMotor(PinENtraversal, PinIN1traversal, PinIN2traversal)
+
+        self.motor_spin = HBridgeMotorPWM(PinENspin, PinIN1spin, PinIN2spin)
 
         self.servo = ServoMotor(PinServo, SERVO_OPEN_DUTY, SERVO_CLOSE_DUTY)
 
@@ -74,15 +76,58 @@ class InitialState(State):
         self._sys.servo.open()
         self._sys.enc_winch.zero_counts()
 
+        self._sys.led_internal.on()
+ 
+        # change state
+        self._sys.transition_to()
+
+class CalibrateTraversalState(State):
+    def tick(self) -> None:
+        print("CalibrateTraversalState")
+        # wait until either button is pressed low
+        while self._sys.button_mode.value() == 1 and self._sys.button_stop.value() == 1:
+            pass
+        # wait a tiny bit to hopefully ignore debouncing
+        utime.sleep(DEBOUNCE_WAIT_TIME_SEC)
+
+        if self._sys.button_mode.value() == 0 and self._sys.button_stop.value() == 0:
+            # if both buttons are pressed, move to ready state
+            # wait until both depressed
+            while self._sys.button_mode.value() == 0 and self._sys.button_stop.value() == 0:
+                pass
+            # wait a bit longer for debouncing
+            utime.sleep(DEBOUNCE_WAIT_TIME_SEC)
+            # ready state
+            self._sys.transition_to(ReadyState())
+        else:
+            # only one of the buttons are pressed
+            if self._sys.button_mode.value() == 0:
+                # mode (blue) button pressed, traverse forward
+                self._sys.motor_traversal.forward(TRAVERSAL_FREQ, TRAVERSAL_DUTY_U16)
+                # keep moving while button pressed
+                while self._sys.button_mode.value() == 0:
+                    pass
+            else:
+                # stop (red) button pressed, traverse backward
+                self._sys.motor_traversal.backward(TRAVERSAL_FREQ, TRAVERSAL_DUTY_U16)
+                # keep moving while button pressed
+                while self._sys.button_stop.value() == 0:
+                    pass
+            # stop moving
+            self._sys.motor_spin.off()
+            # wait a bit longer for debouncing
+            utime.sleep(DEBOUNCE_WAIT_TIME_SEC)
+            # don't change state
+
+class ReadyState(State):
+    def tick(self) -> None:
+        print("ReadyState")
         # interrupt stop button for shutdown
         self._sys.button_stop.irq(self._sys.shutdown_local, Pin.IRQ_FALLING)
-        
-        self._sys.led_internal.on()
-
-        # wait until mode button pressed low
-        while self._sys.button_mode.value():
+        # wait for blue (mode) button to be pressed to start
+        while self._sys.button_mode.value() == 1:
             pass
-        #utime.sleep(2)
+        # start!
         self._sys.transition_to(CloseGrabberState())
 
 class CloseGrabberState(State):
@@ -91,6 +136,14 @@ class CloseGrabberState(State):
         self._sys.led_internal.off()
         self._sys.servo.close()
         utime.sleep(SERVO_DURATION_SEC)
+        self._sys.transition_to(TurnArmState())
+
+class TurnArmState(State):
+    def tick(self) -> None:
+        print("TurnArmState")
+        self._sys.motor_spin.forward(SPIN_FREQ, SPIN_DUTY_U16)
+        utime.sleep(SPIN_DURATION)
+        self._sys.motor_spin.off()
         self._sys.transition_to(WinchUpState())
 
 class WinchUpState(State):
@@ -98,8 +151,8 @@ class WinchUpState(State):
         print("WinchUpState")
         self._sys.motor_winch.forward(WINCH_FREQ, WINCH_DUTY_U16)
         utime.sleep(WINCH_DURATION)
-        #while self._sys.enc_winch.count < WINCH_UP_POS:
-        #    pass
+        while self._sys.enc_winch.count < WINCH_UP_POS:
+            pass
         self._sys.motor_winch.off()
         self._sys.transition_to(TraverseForwardState())
 
